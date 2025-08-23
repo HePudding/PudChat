@@ -28,7 +28,15 @@ async function* openaiChat(
 
   if (!(options.stream ?? true)) {
     const json = await res.json()
-    let content = json?.choices?.[0]?.message?.content
+    const msg = json?.choices?.[0]?.message ?? {}
+    let reasoning = ''
+    const rawReasoning = (msg as any).reasoning ?? (msg as any).reasoning_content
+    if (typeof rawReasoning === 'string') reasoning = rawReasoning
+    else if (Array.isArray(rawReasoning))
+      reasoning = rawReasoning.map((r: any) => r?.text ?? '').join('')
+    if (reasoning) yield { type: 'thinking', value: reasoning }
+
+    let content = msg.content
     if (typeof content !== 'string') {
       content = Array.isArray(content)
         ? content.map((c: any) => c?.text ?? '').join('')
@@ -83,7 +91,18 @@ async function* openaiChat(
       if (data === '[DONE]') return
       try {
         const json = JSON.parse(data)
-        const raw = json.choices?.[0]?.delta?.content
+        const delta = json.choices?.[0]?.delta ?? {}
+
+        // reasoning chunk
+        let reasoningChunk = ''
+        const rawReason = (delta as any).reasoning ?? (delta as any).reasoning_content
+        if (typeof rawReason === 'string') reasoningChunk = rawReason
+        else if (Array.isArray(rawReason))
+          reasoningChunk = rawReason.map((r: any) => r?.text ?? '').join('')
+        if (reasoningChunk) yield { type: 'thinking', value: reasoningChunk }
+
+        // normal content chunk
+        const raw = (delta as any).content
         let chunk = ''
         if (typeof raw === 'string') chunk = raw
         else if (Array.isArray(raw))
