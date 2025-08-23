@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ['@pudchat/core', '@pudchat/adapter-unified'],
 }
 
 export default nextConfig
