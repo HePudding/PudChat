@@ -5,17 +5,31 @@ import Sidebar from '../sidebar/Sidebar'
 import ChatView from '../chat/ChatView'
 import RightPanel from '../right/RightPanel'
 import { useChat } from '../../hooks/useChat'
-import { loadSettings, type Settings, defaultSettings } from '../../lib/storage'
+import {
+  loadSettings,
+  type Settings,
+  defaultSettings,
+  loadLastModel,
+  saveLastModel,
+} from '../../lib/storage'
 import { Menu, PanelRight, X } from 'lucide-react'
 
 export default function AppShell() {
   const [settings, setSettings] = useState<Settings>(defaultSettings)
-  const [selectedModel, setSelectedModel] = useState('')
+  const [selectedModel, setSelectedModelState] = useState('')
   useEffect(() => {
     const s = loadSettings()
     setSettings(s)
-    setSelectedModel(s.models[0]?.name || '')
+    const last = loadLastModel()
+    setSelectedModelState(
+      s.models.find((m) => m.name === last)?.name || s.models[0]?.name || '',
+    )
   }, [])
+
+  const setSelectedModel = (m: string) => {
+    setSelectedModelState(m)
+    saveLastModel(m)
+  }
 
   const chat = useChat(settings, selectedModel)
 

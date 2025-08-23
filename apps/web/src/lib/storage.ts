@@ -35,6 +35,7 @@ export interface Settings {
 
 const CONVERSATIONS_KEY = 'pudchat:conversations'
 const SETTINGS_KEY = 'pudchat:settings'
+const LAST_MODEL_KEY = 'pudchat:last-model'
 
 export const defaultSettings: Settings = {
   protocol: 'openai',
@@ -85,6 +86,24 @@ export function saveSettings(s: Settings) {
   if (typeof localStorage === 'undefined') return
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadLastModel(): string {
+  if (typeof localStorage === 'undefined') return ''
+  try {
+    return localStorage.getItem(LAST_MODEL_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+export function saveLastModel(model: string) {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(LAST_MODEL_KEY, model)
   } catch {
     /* ignore */
   }
