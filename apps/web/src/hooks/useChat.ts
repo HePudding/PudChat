@@ -118,22 +118,26 @@ export function useChat(settings: Settings, selectedModel: string) {
       thinking: '',
       createdAt: Date.now(),
       tokens: 0,
+      thinkingOpened: false,
     }
     setPending(pendingMsg)
     setError('')
     controller.current = new AbortController()
+    let firstTokenAt: number | null = null
     try {
       for await (const delta of model(msgs, {
         stream: true,
         signal: controller.current.signal,
       })) {
         if (delta.type === 'token') {
+          if (!firstTokenAt) firstTokenAt = Date.now()
           pendingMsg.content += delta.value
           pendingMsg.tokens = countTokens(
             pendingMsg.content + (pendingMsg.thinking || ''),
           )
           setPending({ ...pendingMsg })
         } else if (delta.type === 'thinking') {
+          if (!firstTokenAt) firstTokenAt = Date.now()
           pendingMsg.thinking = (pendingMsg.thinking || '') + delta.value
           pendingMsg.tokens = countTokens(
             pendingMsg.content + (pendingMsg.thinking || ''),
@@ -142,7 +146,13 @@ export function useChat(settings: Settings, selectedModel: string) {
         } else if (delta.type === 'event') {
           if (delta.event === 'error') setError(delta.value)
           if (delta.event === 'end') {
-            pendingMsg.thinkingDuration = Date.now() - pendingMsg.createdAt
+            const now = Date.now()
+            pendingMsg.thinkingDuration = now - pendingMsg.createdAt
+            if (firstTokenAt) {
+              pendingMsg.firstTokenLatency = firstTokenAt - pendingMsg.createdAt
+              pendingMsg.tokensPerSecond =
+                (pendingMsg.tokens || 0) / ((now - firstTokenAt) / 1000)
+            }
             setPending(null)
             const finished: Conversation = {
               ...conv,

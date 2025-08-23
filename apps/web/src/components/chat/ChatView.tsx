@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import MessageBubble from './MessageBubble'
 import { ToolbarToggle } from '../common/ToolbarToggle'
-import { RefreshCcw, Square } from 'lucide-react'
+import { RefreshCcw, ArrowUp, Square } from 'lucide-react'
 import type { Settings } from '../../lib/storage'
 import type { UseChatReturn } from '../../hooks/useChat'
 
@@ -60,14 +60,6 @@ export default function ChatView({
           />
           <button
             className="border rounded p-1"
-            onClick={chat.stop}
-            title="停止"
-            type="button"
-          >
-            <Square className="h-4 w-4" />
-          </button>
-          <button
-            className="border rounded p-1"
             onClick={chat.regenerate}
             title="重试"
             type="button"
@@ -84,7 +76,11 @@ export default function ChatView({
             key={m.id}
             message={m}
             showThinking={chat.showThinking}
-            thinkingDefaultOpen={settings.showThinkingByDefault}
+            thinkingDefaultOpen={
+              m.thinkingOpened === undefined
+                ? settings.showThinkingByDefault
+                : false
+            }
           />
         ))}
         {chat.pending && (
@@ -92,7 +88,7 @@ export default function ChatView({
             <MessageBubble
               message={chat.pending}
               showThinking={chat.showThinking}
-              thinkingDefaultOpen={true}
+              thinkingDefaultOpen={false}
               pending
             />
           </div>
@@ -113,9 +109,32 @@ export default function ChatView({
             }
           }}
         />
-        <div className="flex justify-end">
-          <button className="border rounded px-4 py-1" onClick={chat.send}>
-            发送
+        <div className="flex justify-end space-x-2">
+          <button
+            type="button"
+            className={`p-2 rounded-full border ${
+              !!chat.pending
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-black'
+            }`}
+            onClick={chat.send}
+            disabled={!!chat.pending}
+            title="发送"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className={`p-2 rounded-full border ${
+              !!chat.pending
+                ? 'bg-white text-black border-black'
+                : 'bg-white text-gray-300 border-gray-300'
+            }`}
+            onClick={chat.stop}
+            disabled={!chat.pending}
+            title="停止"
+          >
+            <Square className="h-4 w-4" />
           </button>
         </div>
         {chat.error && <div className="text-red-500">Error: {chat.error}</div>}

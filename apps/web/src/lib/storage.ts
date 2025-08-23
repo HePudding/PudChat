@@ -5,8 +5,14 @@ export interface Message extends ChatMessage {
   thinking?: string
   /** token count for this message (approximate) */
   tokens?: number
+  /** time from send to first token (ms) */
+  firstTokenLatency?: number
+  /** throughput in tokens per second */
+  tokensPerSecond?: number
   /** duration of thinking in milliseconds */
   thinkingDuration?: number
+  /** whether thinking panel was ever opened during generation */
+  thinkingOpened?: boolean
   createdAt: number
 }
 

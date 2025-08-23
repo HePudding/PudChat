@@ -6,16 +6,27 @@ export default function ThinkingPanel({
   defaultOpen,
   streaming,
   duration,
+  onOpenChange,
 }: {
   content?: string
   defaultOpen?: boolean
   streaming?: boolean
   duration?: number
+  onOpenChange?: (open: boolean) => void
 }) {
   const [open, setOpen] = useState(!!defaultOpen)
   const wasOpen = useRef(open)
   const startRef = useRef(Date.now())
   const [time, setTime] = useState<number | undefined>(duration)
+
+  useEffect(() => {
+    if (streaming) {
+      const id = setInterval(() => {
+        setTime(Date.now() - startRef.current)
+      }, 1000)
+      return () => clearInterval(id)
+    }
+  }, [streaming])
 
   useEffect(() => {
     if (!streaming && time === undefined) {
@@ -27,12 +38,13 @@ export default function ThinkingPanel({
 
   useEffect(() => {
     wasOpen.current = open
-  }, [open])
+    onOpenChange?.(open)
+  }, [open, onOpenChange])
 
   if (!content && !streaming) return null
 
   const summary = streaming
-    ? '思考中'
+    ? `思考中${time ? ` ${(time / 1000).toFixed(0)}秒` : ''}`
     : time !== undefined
       ? `思考完成${(time / 1000).toFixed(1)}秒`
       : '思考'

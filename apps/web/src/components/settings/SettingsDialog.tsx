@@ -70,7 +70,7 @@ export default function SettingsDialog({
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/20" />
         <Dialog.Content className="fixed right-0 top-0 z-50 h-full w-[90vw] max-w-sm bg-white dark:bg-zinc-900 p-4 shadow-xl border-l rounded-l-2xl focus:outline-none lg:left-1/2 lg:top-1/2 lg:right-auto lg:h-auto lg:w-full lg:max-w-lg lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl lg:border lg:p-6">
           <button
             type="button"
