@@ -10,6 +10,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@pudchat/adapter-unified':
+        specifier: workspace:*
+        version: link:../../packages/adapters/unified
+      '@pudchat/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -68,6 +74,14 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.2
+
+  packages/adapters/unified:
+    dependencies:
+      '@pudchat/core':
+        specifier: workspace:*
+        version: link:../../core
+
+  packages/core: {}
 
 packages:
 
