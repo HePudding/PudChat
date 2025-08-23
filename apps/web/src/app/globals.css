@@ -54,3 +54,9 @@ body {
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+@layer base {
+  button {
+    @apply transition-shadow hover:shadow-md active:shadow-lg;
+  }
+}

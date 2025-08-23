@@ -46,7 +46,7 @@ export default function AppShell() {
       {leftOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/20"
+            className="fixed inset-y-0 left-72 right-0 z-40 bg-black/20"
             onClick={() => setLeftOpen(false)}
           />
           <div className="fixed inset-y-0 left-0 z-50 w-72 bg-background shadow-lg relative">
@@ -93,7 +93,7 @@ export default function AppShell() {
       {rightOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/20"
+            className="fixed inset-y-0 left-0 right-80 z-40 bg-black/20"
             onClick={() => setRightOpen(false)}
           />
           <div className="fixed inset-y-0 right-0 z-50 w-80 bg-background shadow-lg relative">

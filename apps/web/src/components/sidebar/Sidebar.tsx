@@ -124,8 +124,8 @@ export default function Sidebar({
         open={deleteId !== null}
         onOpenChange={(v) => !v && setDeleteId(null)}
       >
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-background p-6 shadow-xl focus:outline-none">
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl focus:outline-none">
           <Dialog.Title className="text-lg font-medium">
             永久删除对话
           </Dialog.Title>
