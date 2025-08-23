@@ -115,4 +115,4 @@ pnpm dev
 
 * GitHub：[@HePudding](https://github.com/HePudding)
 * Bilibili：[https://space.bilibili.com/383882267](https://space.bilibili.com/383882267)
-* 爱发电：[https://space.bilibili.com/383882267](https://afdian.com/a/hepudding)
+* 爱发电：https://afdian.com/a/hepudding
