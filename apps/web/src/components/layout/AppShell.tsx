@@ -44,15 +44,25 @@ export default function AppShell() {
       </div>
       {/* mobile left drawer */}
       {leftOpen && (
-        <div className="fixed inset-0 z-50 bg-background flex">
-          <Sidebar chat={chat} settings={settings} setSettings={setSettings} />
-          <button
-            className="absolute right-4 top-4 rounded border p-1"
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20"
             onClick={() => setLeftOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          />
+          <div className="fixed inset-y-0 left-0 z-50 w-72 bg-background shadow-lg relative">
+            <Sidebar
+              chat={chat}
+              settings={settings}
+              setSettings={setSettings}
+            />
+            <button
+              className="absolute right-4 top-4 rounded border p-1"
+              onClick={() => setLeftOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </>
       )}
 
       {/* main chat */}
@@ -81,15 +91,21 @@ export default function AppShell() {
       </div>
       {/* mobile right drawer */}
       {rightOpen && (
-        <div className="fixed inset-0 z-50 bg-background flex justify-end">
-          <RightPanel chat={chat} selectedModel={selectedModel} />
-          <button
-            className="absolute left-4 top-4 rounded border p-1"
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20"
             onClick={() => setRightOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          />
+          <div className="fixed inset-y-0 right-0 z-50 w-80 bg-background shadow-lg relative">
+            <RightPanel chat={chat} selectedModel={selectedModel} />
+            <button
+              className="absolute left-4 top-4 rounded border p-1"
+              onClick={() => setRightOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
