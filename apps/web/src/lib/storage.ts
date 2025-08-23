@@ -68,9 +68,14 @@ export function loadSettings(): Settings {
   if (typeof localStorage === 'undefined') return defaultSettings
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
-    return raw
-      ? { ...defaultSettings, ...(JSON.parse(raw) as Settings) }
-      : defaultSettings
+    const parsed = raw ? (JSON.parse(raw) as Settings) : defaultSettings
+    return {
+      ...defaultSettings,
+      ...parsed,
+      models: parsed.models
+        ? parsed.models.map((m) => ({ ...m, thinking: m.thinking ?? true }))
+        : [],
+    }
   } catch {
     return defaultSettings
   }

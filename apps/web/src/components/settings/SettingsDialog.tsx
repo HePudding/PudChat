@@ -45,7 +45,7 @@ export default function SettingsDialog({
   const addModel = () => {
     setLocal((s) => ({
       ...s,
-      models: [...s.models, { name: '', thinking: false }],
+      models: [...s.models, { name: '', thinking: true }],
     }))
   }
 

@@ -20,6 +20,9 @@ export function useChat(settings: Settings, selectedModel: string) {
   const [showThinking, setShowThinking] = useState(
     settings.showThinkingByDefault,
   )
+  useEffect(() => {
+    setShowThinking(settings.showThinkingByDefault)
+  }, [settings.showThinkingByDefault])
   const [pending, setPending] = useState<Message | null>(null)
   const [error, setError] = useState('')
   const [input, setInput] = useState('')
