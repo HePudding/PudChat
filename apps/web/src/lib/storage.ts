@@ -3,6 +3,10 @@ import type { ChatMessage } from '@pudchat/core'
 export interface Message extends ChatMessage {
   id: string
   thinking?: string
+  /** token count for this message (approximate) */
+  tokens?: number
+  /** duration of thinking in milliseconds */
+  thinkingDuration?: number
   createdAt: number
 }
 

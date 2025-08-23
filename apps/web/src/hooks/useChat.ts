@@ -8,6 +8,7 @@ import {
   loadConversations,
   saveConversations,
 } from '../lib/storage'
+import { countTokens } from '../lib/utils'
 
 function uid() {
   return Math.random().toString(36).slice(2)
@@ -75,6 +76,7 @@ export function useChat(settings: Settings, selectedModel: string) {
       role: 'user',
       content: input,
       createdAt: Date.now(),
+      tokens: countTokens(input),
     }
     const conv = {
       ...current,
@@ -112,6 +114,7 @@ export function useChat(settings: Settings, selectedModel: string) {
       content: '',
       thinking: '',
       createdAt: Date.now(),
+      tokens: 0,
     }
     setPending(pendingMsg)
     setError('')
@@ -123,13 +126,20 @@ export function useChat(settings: Settings, selectedModel: string) {
       })) {
         if (delta.type === 'token') {
           pendingMsg.content += delta.value
+          pendingMsg.tokens = countTokens(
+            pendingMsg.content + (pendingMsg.thinking || ''),
+          )
           setPending({ ...pendingMsg })
         } else if (delta.type === 'thinking') {
           pendingMsg.thinking = (pendingMsg.thinking || '') + delta.value
+          pendingMsg.tokens = countTokens(
+            pendingMsg.content + (pendingMsg.thinking || ''),
+          )
           setPending({ ...pendingMsg })
         } else if (delta.type === 'event') {
           if (delta.event === 'error') setError(delta.value)
           if (delta.event === 'end') {
+            pendingMsg.thinkingDuration = Date.now() - pendingMsg.createdAt
             setPending(null)
             const finished: Conversation = {
               ...conv,

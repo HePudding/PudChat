@@ -93,6 +93,7 @@ export default function ChatView({
               message={chat.pending}
               showThinking={chat.showThinking}
               thinkingDefaultOpen={true}
+              pending
             />
           </div>
         )}

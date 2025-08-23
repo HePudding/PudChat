@@ -7,10 +7,12 @@ export default function MessageBubble({
   message,
   showThinking,
   thinkingDefaultOpen,
+  pending = false,
 }: {
   message: Message
   showThinking: boolean
   thinkingDefaultOpen: boolean
+  pending?: boolean
 }) {
   const isUser = message.role === 'user'
   return (
@@ -22,11 +24,18 @@ export default function MessageBubble({
       <AvatarMono emoji={isUser ? '👤' : '🤖'} />
       <div className="flex-1 space-y-2">
         <MarkdownRenderer content={message.content} />
-        {showThinking && (
+        {showThinking && (message.thinking || pending) && (
           <ThinkingPanel
             content={message.thinking}
             defaultOpen={thinkingDefaultOpen}
+            streaming={pending}
+            duration={message.thinkingDuration}
           />
+        )}
+        {typeof message.tokens === 'number' && (
+          <div className="text-xs text-muted-foreground text-right">
+            Tokens: {message.tokens}
+          </div>
         )}
       </div>
     </div>
