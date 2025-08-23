@@ -28,8 +28,47 @@ async function* openaiChat(
 
   if (!(options.stream ?? true)) {
     const json = await res.json()
-    const content = json?.choices?.[0]?.message?.content
-    if (content) yield { type: 'token', value: content }
+    const msg = json?.choices?.[0]?.message ?? {}
+    let reasoning = ''
+    const rawReasoning = (msg as any).reasoning ?? (msg as any).reasoning_content
+    if (typeof rawReasoning === 'string') reasoning = rawReasoning
+    else if (Array.isArray(rawReasoning))
+      reasoning = rawReasoning.map((r: any) => r?.text ?? '').join('')
+    if (reasoning) yield { type: 'thinking', value: reasoning }
+
+    let content = msg.content
+    if (typeof content !== 'string') {
+      content = Array.isArray(content)
+        ? content.map((c: any) => c?.text ?? '').join('')
+        : ''
+    }
+    if (content) {
+      let mode: 'normal' | 'think' = 'normal'
+      let rest = content as string
+      while (rest.length > 0) {
+        if (mode === 'normal') {
+          const idx = rest.indexOf('<think>')
+          if (idx === -1) {
+            if (rest) yield { type: 'token', value: rest }
+            rest = ''
+          } else {
+            if (idx > 0) yield { type: 'token', value: rest.slice(0, idx) }
+            rest = rest.slice(idx + 7)
+            mode = 'think'
+          }
+        } else {
+          const idx = rest.indexOf('</think>')
+          if (idx === -1) {
+            if (rest) yield { type: 'thinking', value: rest }
+            rest = ''
+          } else {
+            if (idx > 0) yield { type: 'thinking', value: rest.slice(0, idx) }
+            rest = rest.slice(idx + 8)
+            mode = 'normal'
+          }
+        }
+      }
+    }
     return
   }
 
@@ -37,6 +76,8 @@ async function* openaiChat(
   if (!reader) return
   const decoder = new TextDecoder()
   let buffer = ''
+  let tail = ''
+  let mode: 'normal' | 'think' = 'normal'
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
@@ -50,11 +91,63 @@ async function* openaiChat(
       if (data === '[DONE]') return
       try {
         const json = JSON.parse(data)
-        const delta = json.choices?.[0]?.delta?.content
-        if (delta) yield { type: 'token', value: delta }
+        const delta = json.choices?.[0]?.delta ?? {}
+
+        // reasoning chunk
+        let reasoningChunk = ''
+        const rawReason = (delta as any).reasoning ?? (delta as any).reasoning_content
+        if (typeof rawReason === 'string') reasoningChunk = rawReason
+        else if (Array.isArray(rawReason))
+          reasoningChunk = rawReason.map((r: any) => r?.text ?? '').join('')
+        if (reasoningChunk) yield { type: 'thinking', value: reasoningChunk }
+
+        // normal content chunk
+        const raw = (delta as any).content
+        let chunk = ''
+        if (typeof raw === 'string') chunk = raw
+        else if (Array.isArray(raw))
+          chunk = raw.map((c: any) => c?.text ?? '').join('')
+        if (!chunk) continue
+        tail += chunk
+        while (tail) {
+          if (mode === 'normal') {
+            const idx = tail.indexOf('<think>')
+            if (idx === -1) {
+              if (tail.length > 10) {
+                yield { type: 'token', value: tail.slice(0, tail.length - 10) }
+                tail = tail.slice(tail.length - 10)
+              }
+              break
+            } else {
+              if (idx > 0) yield { type: 'token', value: tail.slice(0, idx) }
+              tail = tail.slice(idx + 7)
+              mode = 'think'
+            }
+          } else {
+            const idx = tail.indexOf('</think>')
+            if (idx === -1) {
+              if (tail.length > 10) {
+                yield { type: 'thinking', value: tail.slice(0, tail.length - 10) }
+                tail = tail.slice(tail.length - 10)
+              }
+              break
+            } else {
+              if (idx > 0) yield { type: 'thinking', value: tail.slice(0, idx) }
+              tail = tail.slice(idx + 8)
+              mode = 'normal'
+            }
+          }
+        }
       } catch {
         /* ignore */
       }
+    }
+  }
+  if (tail) {
+    if (mode === 'think') {
+      yield { type: 'thinking', value: tail }
+    } else {
+      yield { type: 'token', value: tail }
     }
   }
 }

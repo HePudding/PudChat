@@ -8,6 +8,7 @@ import {
   loadConversations,
   saveConversations,
 } from '../lib/storage'
+import { countTokens } from '../lib/utils'
 
 function uid() {
   return Math.random().toString(36).slice(2)
@@ -19,6 +20,9 @@ export function useChat(settings: Settings, selectedModel: string) {
   const [showThinking, setShowThinking] = useState(
     settings.showThinkingByDefault,
   )
+  useEffect(() => {
+    setShowThinking(settings.showThinkingByDefault)
+  }, [settings.showThinkingByDefault])
   const [pending, setPending] = useState<Message | null>(null)
   const [error, setError] = useState('')
   const [input, setInput] = useState('')
@@ -65,6 +69,7 @@ export function useChat(settings: Settings, selectedModel: string) {
 
   const send = async () => {
     if (!current) return
+    if (!input.trim()) return
     const modelConf = settings.models.find((m) => m.name === selectedModel)
     if (!modelConf) {
       setError('Model not found')
@@ -75,6 +80,7 @@ export function useChat(settings: Settings, selectedModel: string) {
       role: 'user',
       content: input,
       createdAt: Date.now(),
+      tokens: countTokens(input),
     }
     const conv = {
       ...current,
@@ -112,24 +118,42 @@ export function useChat(settings: Settings, selectedModel: string) {
       content: '',
       thinking: '',
       createdAt: Date.now(),
+      tokens: 0,
+      thinkingOpened: false,
     }
     setPending(pendingMsg)
     setError('')
     controller.current = new AbortController()
+    let firstTokenAt: number | null = null
     try {
       for await (const delta of model(msgs, {
         stream: true,
         signal: controller.current.signal,
       })) {
         if (delta.type === 'token') {
+          if (!firstTokenAt) firstTokenAt = Date.now()
           pendingMsg.content += delta.value
+          pendingMsg.tokens = countTokens(
+            pendingMsg.content + (pendingMsg.thinking || ''),
+          )
           setPending({ ...pendingMsg })
         } else if (delta.type === 'thinking') {
+          if (!firstTokenAt) firstTokenAt = Date.now()
           pendingMsg.thinking = (pendingMsg.thinking || '') + delta.value
+          pendingMsg.tokens = countTokens(
+            pendingMsg.content + (pendingMsg.thinking || ''),
+          )
           setPending({ ...pendingMsg })
         } else if (delta.type === 'event') {
           if (delta.event === 'error') setError(delta.value)
           if (delta.event === 'end') {
+            const now = Date.now()
+            pendingMsg.thinkingDuration = now - pendingMsg.createdAt
+            if (firstTokenAt) {
+              pendingMsg.firstTokenLatency = firstTokenAt - pendingMsg.createdAt
+              pendingMsg.tokensPerSecond =
+                (pendingMsg.tokens || 0) / ((now - firstTokenAt) / 1000)
+            }
             setPending(null)
             const finished: Conversation = {
               ...conv,
@@ -210,3 +234,5 @@ export function useChat(settings: Settings, selectedModel: string) {
     switchConversation,
   }
 }
+
+export type UseChatReturn = ReturnType<typeof useChat>
