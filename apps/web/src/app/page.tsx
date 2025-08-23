@@ -1,272 +1,148 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { createChatModel } from '@pudchat/adapter-unified'
-import type { ProviderConfig, ChatMessage } from '@pudchat/core'
-
-interface SettingsModel {
-  name: string
-  thinking: boolean
-}
-interface Settings {
-  protocol: 'openai' | 'anthropic'
-  endpoint: string
-  apiKey: string
-  models: SettingsModel[]
-}
-
-const STORAGE_KEY = 'pudchat:settings'
-
-const defaultSettings: Settings = {
-  protocol: 'openai',
-  endpoint: '',
-  apiKey: '',
-  models: [],
-}
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useChat } from '../hooks/useChat'
+import { loadSettings, type Settings, defaultSettings } from '../lib/storage'
 
 export default function Home() {
   const [settings, setSettings] = useState<Settings>(defaultSettings)
-  const [showSettings, setShowSettings] = useState(false)
-  const [selectedModel, setSelectedModel] = useState<string>('')
-  const [input, setInput] = useState('')
-  const [response, setResponse] = useState('')
-  const [thinking, setThinking] = useState('')
-  const [error, setError] = useState('')
-  const [stream, setStream] = useState(true)
-  const controller = useRef<AbortController | null>(null)
-
+  const [selectedModel, setSelectedModel] = useState('')
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try {
-        const s: Settings = JSON.parse(raw)
-        setSettings(s)
-        setSelectedModel(s.models[0]?.name ?? '')
-      } catch {
-        /* ignore */
-      }
-    }
+    const s = loadSettings()
+    setSettings(s)
+    setSelectedModel(s.models[0]?.name || '')
   }, [])
 
-  const updateModel = (
-    index: number,
-    field: keyof SettingsModel,
-    value: string | boolean,
-  ) => {
-    setSettings((s) => ({
-      ...s,
-      models: s.models.map((m, i) =>
-        i === index ? { ...m, [field]: value } : m,
-      ),
-    }))
-  }
-
-  const addModel = () => {
-    setSettings((s) => ({
-      ...s,
-      models: [...s.models, { name: '', thinking: false }],
-    }))
-  }
-
-  const removeModel = (idx: number) => {
-    setSettings((s) => ({ ...s, models: s.models.filter((_, i) => i !== idx) }))
-  }
-
-  const saveSettings = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-    setShowSettings(false)
-    setSelectedModel(settings.models[0]?.name ?? '')
-  }
-
-  const send = async () => {
-    const modelConf = settings.models.find((m) => m.name === selectedModel)
-    if (!modelConf) {
-      setError('Model not found')
-      return
-    }
-    const config: ProviderConfig = {
-      protocol: settings.protocol,
-      endpoint: settings.endpoint,
-      apiKey: settings.apiKey,
-      model: modelConf.name,
-      thinking: modelConf.thinking,
-    }
-    const model = createChatModel(config)
-    const messages: ChatMessage[] = [{ role: 'user', content: input }]
-    setResponse('')
-    setThinking('')
-    setError('')
-    controller.current = new AbortController()
-    try {
-      for await (const delta of model(messages, {
-        stream,
-        signal: controller.current.signal,
-      })) {
-        if (delta.type === 'token') {
-          setResponse((r) => r + delta.value)
-        } else if (delta.type === 'thinking') {
-          setThinking((t) => t + delta.value)
-        } else if (delta.type === 'event' && delta.event === 'error') {
-          setError(delta.value)
-        }
-      }
-    } catch (err: unknown) {
-      const e = err as { name?: string; message?: string }
-      if (e?.name !== 'AbortError') {
-        setError(e?.message || String(err))
-      }
-    }
-  }
-
-  const stop = () => {
-    controller.current?.abort()
-  }
+  const chat = useChat(settings, selectedModel)
 
   const configured =
     settings.apiKey && settings.endpoint && settings.models.length > 0
 
   return (
-    <main className="relative p-4 space-y-4 max-w-2xl mx-auto">
-      <h1 className="text-xl font-bold">PudChat</h1>
-      {!configured && <p>请在左下角设置中配置模型</p>}
-      {configured && (
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
+    <main className="flex h-screen">
+      {/* sidebar */}
+      <div className="w-72 border-r p-2 space-y-2 overflow-y-auto">
+        <div className="flex space-x-2">
+          <button className="border px-2" onClick={chat.newConversation}>
+            新建
+          </button>
+          <Link href="/settings" className="border px-2 text-center flex-1">
+            设置
+          </Link>
+        </div>
+        <ul className="space-y-1">
+          {chat.conversations.map((c) => (
+            <li
+              key={c.id}
+              className={`p-2 border cursor-pointer rounded flex justify-between items-center ${c.id === chat.currentId ? 'bg-gray-200' : ''}`}
+              onClick={() => chat.switchConversation(c.id)}
+            >
+              <span className="flex-1 truncate">{c.title}</span>
+              <div className="space-x-1 text-xs">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const title = prompt('重命名', c.title)
+                    if (title) chat.renameConversation(c.id, title)
+                  }}
+                >
+                  重命名
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    chat.deleteConversation(c.id)
+                  }}
+                >
+                  删除
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* chat area */}
+      <div className="flex-1 flex flex-col">
+        <div className="p-2 border-b flex items-center space-x-2">
+          {settings.models.length > 0 && (
             <select
               className="border p-1"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
             >
-              {settings.models.map((m) => (
-                <option key={m.name} value={m.name}>
+              {settings.models.map((m, i) => (
+                <option key={i} value={m.name}>
                   {m.name}
                 </option>
               ))}
             </select>
-            <label className="flex items-center space-x-1">
-              <input
-                type="checkbox"
-                checked={stream}
-                onChange={(e) => setStream(e.target.checked)}
-              />
-              <span>stream</span>
-            </label>
-          </div>
-          <textarea
-            className="border w-full p-2 h-24"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <div className="space-x-2">
-            <button className="border px-3" onClick={send}>
-              Send
-            </button>
-            <button className="border px-3" onClick={stop}>
-              Stop
-            </button>
-          </div>
-          {thinking && (
-            <div className="text-gray-500 whitespace-pre-wrap">{thinking}</div>
           )}
-          {response && <div className="whitespace-pre-wrap">{response}</div>}
-          {error && <div className="text-red-500">Error: {error}</div>}
+          <label className="flex items-center space-x-1">
+            <input
+              type="checkbox"
+              checked={chat.showThinking}
+              onChange={(e) => chat.setShowThinking(e.target.checked)}
+            />
+            <span>显示思考</span>
+          </label>
         </div>
-      )}
-
-      <button
-        className="fixed bottom-4 left-4 border px-2 py-1 bg-white"
-        onClick={() => setShowSettings((s) => !s)}
-      >
-        设置
-      </button>
-
-      {showSettings && (
-        <div className="fixed bottom-16 left-4 w-80 max-h-[80vh] overflow-auto border bg-white p-4 shadow-lg space-y-4">
-          <div className="space-y-2">
-            <label className="block">
-              <span className="mr-2">Protocol</span>
-              <select
-                value={settings.protocol}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    protocol: e.target.value as Settings['protocol'],
-                  })
-                }
-                className="border p-1"
-              >
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="mr-2">Endpoint</span>
-              <input
-                className="border p-1 w-full"
-                value={settings.endpoint}
-                onChange={(e) =>
-                  setSettings({ ...settings, endpoint: e.target.value })
-                }
-              />
-            </label>
-            <label className="block">
-              <span className="mr-2">API Key</span>
-              <input
-                className="border p-1 w-full"
-                value={settings.apiKey}
-                onChange={(e) =>
-                  setSettings({ ...settings, apiKey: e.target.value })
-                }
-              />
-            </label>
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="font-semibold">Models</h2>
-            {settings.models.map((model, idx) => (
-              <div key={idx} className="flex space-x-2 items-center">
-                <input
-                  className="border p-1 flex-1"
-                  placeholder="model name"
-                  value={model.name}
-                  onChange={(e) => updateModel(idx, 'name', e.target.value)}
-                />
-                <label className="flex items-center space-x-1">
-                  <input
-                    type="checkbox"
-                    checked={model.thinking}
-                    onChange={(e) =>
-                      updateModel(idx, 'thinking', e.target.checked)
-                    }
-                  />
-                  <span>thinking</span>
-                </label>
-                <button
-                  className="border px-2"
-                  onClick={() => removeModel(idx)}
-                >
-                  Delete
-                </button>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {chat.current?.messages.map((m) => (
+            <div key={m.id} className={m.role === 'user' ? 'text-right' : ''}>
+              <div className="whitespace-pre-wrap inline-block max-w-full">
+                {m.content}
               </div>
-            ))}
-            <button className="border px-2" onClick={addModel}>
-              Add Model
-            </button>
-          </div>
-
-          <div className="space-x-2">
-            <button className="border px-4 py-1" onClick={saveSettings}>
-              Save
-            </button>
-            <button
-              className="border px-4 py-1"
-              onClick={() => setShowSettings(false)}
-            >
-              Close
-            </button>
-          </div>
+              {chat.showThinking && m.thinking && (
+                <details className="text-gray-500 text-sm">
+                  <summary>思考</summary>
+                  <div className="whitespace-pre-wrap">{m.thinking}</div>
+                </details>
+              )}
+            </div>
+          ))}
+          {chat.pending && (
+            <div className="text-left">
+              <div className="whitespace-pre-wrap inline-block max-w-full">
+                {chat.pending.content}
+              </div>
+              {chat.showThinking && chat.pending.thinking && (
+                <details className="text-gray-500 text-sm" open>
+                  <summary>思考</summary>
+                  <div className="whitespace-pre-wrap">
+                    {chat.pending.thinking}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
         </div>
-      )}
+        {configured && (
+          <div className="p-2 space-y-2 border-t">
+            <textarea
+              className="border w-full p-2 h-24"
+              value={chat.input}
+              onChange={(e) => chat.setInput(e.target.value)}
+            />
+            <div className="space-x-2">
+              <button className="border px-3" onClick={chat.send}>
+                发送
+              </button>
+              <button className="border px-3" onClick={chat.stop}>
+                停止
+              </button>
+              <button className="border px-3" onClick={chat.regenerate}>
+                重新生成
+              </button>
+            </div>
+            {chat.error && (
+              <div className="text-red-500">Error: {chat.error}</div>
+            )}
+          </div>
+        )}
+        {!configured && <div className="p-4">请先在设置中配置模型信息</div>}
+      </div>
     </main>
   )
 }
