@@ -1,46 +1,25 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
-interface ModelItem {
-  name: string
-  thinking: boolean
-}
-
-interface Settings {
-  protocol: 'openai' | 'anthropic'
-  endpoint: string
-  apiKey: string
-  models: ModelItem[]
-}
-
-const STORAGE_KEY = 'pudchat:settings'
-
-const defaultSettings: Settings = {
-  protocol: 'openai',
-  endpoint: '',
-  apiKey: '',
-  models: [],
-}
+import {
+  loadSettings,
+  saveSettings,
+  type Settings,
+  type SettingsModel,
+  defaultSettings,
+} from '../../lib/storage'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaultSettings)
 
   useEffect(() => {
-    const raw =
-      typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
-    if (raw) {
-      try {
-        setSettings(JSON.parse(raw))
-      } catch {
-        /* ignore */
-      }
-    }
+    const s = loadSettings()
+    setSettings(s)
   }, [])
 
   const updateModel = (
     index: number,
-    field: keyof ModelItem,
+    field: keyof SettingsModel,
     value: string | boolean,
   ) => {
     setSettings((s) => ({
@@ -63,7 +42,7 @@ export default function SettingsPage() {
   }
 
   const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    saveSettings(settings)
     alert('Saved!')
   }
 
@@ -104,6 +83,33 @@ export default function SettingsPage() {
             value={settings.apiKey}
             onChange={(e) =>
               setSettings({ ...settings, apiKey: e.target.value })
+            }
+          />
+        </label>
+        <label className="block">
+          <span className="mr-2">显示思考默认开启</span>
+          <input
+            type="checkbox"
+            checked={settings.showThinkingByDefault}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                showThinkingByDefault: e.target.checked,
+              })
+            }
+          />
+        </label>
+        <label className="block">
+          <span className="mr-2">最大上下文条数</span>
+          <input
+            type="number"
+            className="border p-1 w-full"
+            value={settings.maxContextMessages}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                maxContextMessages: Number(e.target.value),
+              })
             }
           />
         </label>
