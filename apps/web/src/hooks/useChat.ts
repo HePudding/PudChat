@@ -210,3 +210,5 @@ export function useChat(settings: Settings, selectedModel: string) {
     switchConversation,
   }
 }
+
+export type UseChatReturn = ReturnType<typeof useChat>
