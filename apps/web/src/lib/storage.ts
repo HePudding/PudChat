@@ -73,7 +73,7 @@ export function loadSettings(): Settings {
       ...defaultSettings,
       ...parsed,
       models: parsed.models
-        ? parsed.models.map((m) => ({ ...m, thinking: m.thinking ?? true }))
+        ? parsed.models.map((m) => ({ ...m, thinking: m.thinking ?? false }))
         : [],
     }
   } catch {

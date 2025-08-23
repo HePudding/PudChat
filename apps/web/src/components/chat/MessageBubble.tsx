@@ -23,7 +23,6 @@ export default function MessageBubble({
     >
       <AvatarMono emoji={isUser ? '👤' : '🤖'} />
       <div className="flex-1 space-y-2">
-        <MarkdownRenderer content={message.content} />
         {showThinking && (message.thinking || pending) && (
           <ThinkingPanel
             content={message.thinking}
@@ -32,6 +31,7 @@ export default function MessageBubble({
             duration={message.thinkingDuration}
           />
         )}
+        <MarkdownRenderer content={message.content} />
         {typeof message.tokens === 'number' && (
           <div className="text-xs text-muted-foreground text-right">
             Tokens: {message.tokens}
