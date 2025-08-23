@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import type { UseChatReturn } from '../../hooks/useChat'
 import AvatarMono from '../common/AvatarMono'
 import SettingsDialog from '../settings/SettingsDialog'
@@ -24,6 +25,10 @@ export default function Sidebar({
   const conversations = chat.conversations.filter((c) =>
     c.title.toLowerCase().includes(query.toLowerCase()),
   )
+  const handleDelete = (id: string) => {
+    if (confirm('确定删除该会话吗？')) chat.deleteConversation(id)
+  }
+  let touchTimer: ReturnType<typeof setTimeout> | null = null
   return (
     <div className="flex h-full w-72 flex-col border-r">
       <div className="p-2 space-y-2">
@@ -56,8 +61,18 @@ export default function Sidebar({
               return (
                 <li
                   key={c.id}
-                  className={`cursor-pointer rounded-xl p-2 hover:bg-accent ${c.id === chat.currentId ? 'bg-accent' : ''}`}
+                  className={`group relative cursor-pointer rounded-xl p-2 hover:bg-accent ${c.id === chat.currentId ? 'bg-accent' : ''}`}
                   onClick={() => chat.switchConversation(c.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    handleDelete(c.id)
+                  }}
+                  onTouchStart={() => {
+                    touchTimer = setTimeout(() => handleDelete(c.id), 600)
+                  }}
+                  onTouchEnd={() => touchTimer && clearTimeout(touchTimer)}
+                  onTouchMove={() => touchTimer && clearTimeout(touchTimer)}
+                  onTouchCancel={() => touchTimer && clearTimeout(touchTimer)}
                 >
                   <div className="flex items-center space-x-2">
                     <AvatarMono name={c.title} />
@@ -73,6 +88,16 @@ export default function Sidebar({
                       {formatTime(c.updatedAt)}
                     </div>
                   </div>
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100 translate-x-2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(c.id)
+                    }}
+                    aria-label="删除会话"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </li>
               )
             })}
