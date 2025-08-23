@@ -69,6 +69,7 @@ export function useChat(settings: Settings, selectedModel: string) {
 
   const send = async () => {
     if (!current) return
+    if (!input.trim()) return
     const modelConf = settings.models.find((m) => m.name === selectedModel)
     if (!modelConf) {
       setError('Model not found')

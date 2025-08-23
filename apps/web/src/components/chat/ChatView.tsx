@@ -105,24 +105,11 @@ export default function ChatView({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault()
-              chat.send()
+              if (chat.input.trim()) chat.send()
             }
           }}
         />
         <div className="flex justify-end space-x-2">
-          <button
-            type="button"
-            className={`p-2 rounded-full border ${
-              !!chat.pending
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-black'
-            }`}
-            onClick={chat.send}
-            disabled={!!chat.pending}
-            title="发送"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </button>
           <button
             type="button"
             className={`p-2 rounded-full border ${
@@ -135,6 +122,19 @@ export default function ChatView({
             title="停止"
           >
             <Square className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className={`p-2 rounded-full border ${
+              !!chat.pending || !chat.input.trim()
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-black'
+            }`}
+            onClick={chat.send}
+            disabled={!!chat.pending || !chat.input.trim()}
+            title="发送"
+          >
+            <ArrowUp className="h-4 w-4" />
           </button>
         </div>
         {chat.error && <div className="text-red-500">Error: {chat.error}</div>}
