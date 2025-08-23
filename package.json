@@ -1,0 +1,11 @@
+{
+  "name": "pudchat",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "lint": "pnpm --filter web lint",
+    "build": "pnpm --filter web build"
+  },
+  "packageManager": "pnpm@10.5.2"
+}
