@@ -56,18 +56,20 @@ export default function SettingsDialog({
     saveSettings(local)
     setSettings(local)
     setOpen(false)
-    alert('已保存')
   }
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <button className="w-full rounded border px-2 py-1">设置</button>
+        <button type="button" className="w-full rounded border px-2 py-1">
+          设置
+        </button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
         <Dialog.Content className="fixed right-0 top-0 z-50 h-full w-[90vw] max-w-sm bg-background p-4 shadow-xl border-l rounded-l-2xl focus:outline-none lg:left-1/2 lg:top-1/2 lg:right-auto lg:h-auto lg:w-full lg:max-w-lg lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl lg:border lg:p-6">
           <button
+            type="button"
             className="absolute right-4 top-4 rounded p-1 opacity-70 hover:opacity-100 focus:outline-none"
             onClick={() => setOpen(false)}
             aria-label="Close"
@@ -78,7 +80,7 @@ export default function SettingsDialog({
           <Dialog.Description className="text-sm text-muted-foreground">
             接口与模型配置（本地保存，不上传）
           </Dialog.Description>
-          <ScrollArea className="mt-4 max-h-[calc(100vh-8rem)] lg:max-h-[60vh] pr-4">
+          <ScrollArea className="mt-4 h-[calc(100vh-8rem)] pr-4 lg:h-[60vh]">
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="grid gap-1 text-sm">
@@ -183,9 +185,15 @@ export default function SettingsDialog({
           </ScrollArea>
           <div className="mt-6 flex justify-end gap-2">
             <Dialog.Close asChild>
-              <button className="rounded border px-3 py-1 text-sm">关闭</button>
+              <button
+                type="button"
+                className="rounded border px-3 py-1 text-sm"
+              >
+                关闭
+              </button>
             </Dialog.Close>
             <button
+              type="button"
               className="rounded border px-3 py-1 text-sm"
               onClick={onSave}
             >
