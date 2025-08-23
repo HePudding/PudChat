@@ -2,7 +2,7 @@
 
 import * as Dialog from '@radix-ui/react-dialog'
 import { useEffect, useState } from 'react'
-import { X, Plus, Trash2 } from 'lucide-react'
+import { X, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
 import {
   saveSettings,
   type Settings,
@@ -20,9 +20,13 @@ export default function SettingsDialog({
 }) {
   const [open, setOpen] = useState(false)
   const [local, setLocal] = useState<Settings>(settings)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   useEffect(() => {
-    if (open) setLocal(settings)
+    if (open) {
+      setLocal(settings)
+      setShowApiKey(false)
+    }
   }, [open, settings])
 
   const updateModel = (
@@ -112,13 +116,28 @@ export default function SettingsDialog({
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="text-muted-foreground">API Key</span>
-                  <input
-                    className="rounded border px-2 py-1"
-                    value={local.apiKey}
-                    onChange={(e) =>
-                      setLocal({ ...local, apiKey: e.target.value })
-                    }
-                  />
+                  <div className="relative">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      className="w-full rounded border px-2 py-1 pr-8"
+                      value={local.apiKey}
+                      onChange={(e) =>
+                        setLocal({ ...local, apiKey: e.target.value })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-1 flex items-center"
+                      onClick={() => setShowApiKey((v) => !v)}
+                      aria-label={showApiKey ? '隐藏 API Key' : '显示 API Key'}
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
                 </label>
                 <label className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
