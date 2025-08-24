@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import AmbientBackground from '../components/layout/AmbientBackground'
 
 export const metadata: Metadata = {
   title: 'PudChat',
@@ -12,8 +13,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html lang="zh-cn" className="dark">
+      <body className="antialiased bg-slate-950 text-slate-100">
+        <AmbientBackground />
+        {children}
+      </body>
     </html>
   )
 }
