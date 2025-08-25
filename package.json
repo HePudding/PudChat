@@ -4,8 +4,22 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
     "lint": "pnpm --filter web lint",
-    "build": "pnpm --filter web build"
+    "lint:root": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "pnpm --filter web type-check"
   },
-  "packageManager": "pnpm@10.5.2"
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
 }

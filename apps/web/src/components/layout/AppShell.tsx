@@ -1,112 +1,98 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Sidebar from '../sidebar/Sidebar'
-import ChatView from '../chat/ChatView'
-import RightPanel from '../right/RightPanel'
-import { useChat } from '../../hooks/useChat'
-import {
-  loadSettings,
-  type Settings,
-  defaultSettings,
-  loadLastModel,
-  saveLastModel,
-} from '../../lib/storage'
-import { Menu, PanelRight, X } from 'lucide-react'
+import { useState } from 'react'
+import { Menu, PanelRightOpen, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import Sidebar from '@/components/sidebar/Sidebar'
+import ChatView from '@/components/chat/ChatView'
+import RightPanel from '@/components/right/RightPanel'
 
 export default function AppShell() {
-  const [settings, setSettings] = useState<Settings>(defaultSettings)
-  const [selectedModel, setSelectedModelState] = useState('')
-  useEffect(() => {
-    const s = loadSettings()
-    setSettings(s)
-    const last = loadLastModel()
-    setSelectedModelState(
-      s.models.find((m) => m.name === last)?.name || s.models[0]?.name || '',
-    )
-  }, [])
-
-  const setSelectedModel = (m: string) => {
-    setSelectedModelState(m)
-    saveLastModel(m)
-  }
-
-  const chat = useChat(settings, selectedModel)
-
-  const [leftOpen, setLeftOpen] = useState(false)
-  const [rightOpen, setRightOpen] = useState(false)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false)
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false)
 
   return (
-    <div className="flex h-screen">
-      {/* desktop sidebar */}
-      <div className="hidden lg:flex">
-        <Sidebar chat={chat} settings={settings} setSettings={setSettings} />
-      </div>
-      {/* mobile left drawer */}
-      {leftOpen && (
-        <>
-          <div
-            className="fixed inset-y-0 left-72 right-0 z-40 bg-black/20"
-            onClick={() => setLeftOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 z-50 w-72 bg-background shadow-lg relative">
-            <Sidebar
-              chat={chat}
-              settings={settings}
-              setSettings={setSettings}
-            />
-            <button
-              className="absolute right-4 top-4 rounded border p-1"
-              onClick={() => setLeftOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* main chat */}
-      <div className="flex flex-1 flex-col">
-        {/* mobile top bar */}
-        <div className="flex items-center justify-between border-b p-2 lg:hidden">
-          <button onClick={() => setLeftOpen(true)}>
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="font-semibold">{chat.current?.title}</div>
-          <button onClick={() => setRightOpen(true)}>
-            <PanelRight className="h-5 w-5" />
-          </button>
+    <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+      {/* 桌面端布局 (≥1024px) */}
+      <div className="hidden lg:flex h-full">
+        {/* 左侧栏 */}
+        <Sidebar />
+        
+        {/* 中间聊天区域 */}
+        <div className="flex-1 flex flex-col">
+          <ChatView />
         </div>
-        <ChatView
-          chat={chat}
-          settings={settings}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
-        />
+        
+        {/* 右侧面板 */}
+        <div className={`transition-all duration-300 ${rightPanelOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
+          {rightPanelOpen && <RightPanel />}
+        </div>
+        
+        {/* 右侧面板切换按钮 */}
+        <div className="absolute top-4 right-4 z-10">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRightPanelOpen(!rightPanelOpen)}
+            className="rounded-xl shadow-sm"
+          >
+            <PanelRightOpen className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* desktop right panel */}
-      <div className="hidden lg:flex">
-        <RightPanel chat={chat} selectedModel={selectedModel} />
+      {/* 移动端布局 (<1024px) */}
+      <div className="lg:hidden h-full flex flex-col">
+        {/* 移动端顶部导航栏 */}
+        <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+          {/* 左侧菜单按钮 */}
+          <Sheet open={leftPanelOpen} onOpenChange={setLeftPanelOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="rounded-xl">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-80">
+              <div className="flex items-center justify-between p-4 border-b border-border/50">
+                <h2 className="font-semibold">PudChat</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setLeftPanelOpen(false)}
+                  className="rounded-lg"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <Sidebar />
+            </SheetContent>
+          </Sheet>
+          
+          {/* 中间标题 */}
+          <h1 className="font-semibold text-lg">PudChat</h1>
+          
+          {/* 右侧信息按钮 */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="rounded-xl">
+                <PanelRightOpen className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="p-0 w-80">
+              <div className="flex items-center justify-between p-4 border-b border-border/50">
+                <h2 className="font-semibold">会话信息</h2>
+              </div>
+              <RightPanel />
+            </SheetContent>
+          </Sheet>
+        </div>
+        
+        {/* 移动端聊天区域 */}
+        <div className="flex-1 flex flex-col">
+          <ChatView />
+        </div>
       </div>
-      {/* mobile right drawer */}
-      {rightOpen && (
-        <>
-          <div
-            className="fixed inset-y-0 left-0 right-80 z-40 bg-black/20"
-            onClick={() => setRightOpen(false)}
-          />
-          <div className="fixed inset-y-0 right-0 z-50 w-80 bg-background shadow-lg relative">
-            <RightPanel chat={chat} selectedModel={selectedModel} />
-            <button
-              className="absolute left-4 top-4 rounded border p-1"
-              onClick={() => setRightOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </>
-      )}
     </div>
   )
 }
